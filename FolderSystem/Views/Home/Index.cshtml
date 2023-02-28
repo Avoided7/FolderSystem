@@ -1,0 +1,57 @@
+﻿@model Folder
+
+@{
+    ViewData["Title"] = Model.Name;
+}
+
+<div class="row mb-3">
+    <a class="btn btn-success mb-3" asp-action="AddFolder" asp-route-id="@Model.Id">Add Folder</a>
+    <a class="btn btn-primary" asp-action="AddFileToFolder" asp-route-id="@Model.Id">Add File</a>
+</div>
+
+<style>
+    a
+    {
+        text-decoration: none;
+    }
+</style>
+
+<div class="col-md-12">
+    <div class="card">
+        <div class="card-header">
+            <b>@Model.FullPath</b>
+            <a class="btn btn-outline-danger float-end" asp-action="ClearFolder" asp-route-id="@Model.Id"><i class="bi bi-trash3-fill"></i>Clear</a>
+        </div>
+        @if (Model.BaseFolderId != null)
+        {
+            <div class="card-body">
+                <a class="text-danger" asp-action="Index" asp-route-id="@Model.BaseFolderId">
+                    <b>...</b>
+                </a>
+            </div>
+        }
+
+        @foreach (var folder in Model.Folders)
+        {
+            <div class="card-body">
+                <a class="text-success" asp-action="Index" asp-route-id="@folder.Id">
+                    <i class="bi bi-folder"></i> @folder.Name
+                </a>
+                <div class="float-end">
+                    <a asp-action="ExportToFile" asp-route-id="@folder.Id"><i class="bi bi-cloud-upload text-warning"></i> Export</a>
+                    <text> - </text>
+                    <a asp-action="DeleteFolder" asp-route-id="@folder.Id"><i class="bi bi-trash text-danger"></i> Remove</a>
+                </div>
+            </div>
+        }
+        @foreach (var file in Model.Files)
+        {
+            <div class="card-body">
+                <a asp-action="DownloadFile" asp-route-id="@file.Id">
+                    <i class="bi bi-file-earmark"></i> @file.Name
+                </a>
+                <a class="float-end" asp-action="DeleteFile" asp-route-id="@file.Id"><i class="bi bi-trash text-danger"></i> Remove</a>
+            </div>
+        }
+    </div >
+</div>

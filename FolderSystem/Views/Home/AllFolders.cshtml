@@ -1,0 +1,14 @@
+﻿@model IEnumerable<Folder>
+
+@{
+    ViewData["Title"] = "All";
+}
+
+<div class="card">
+@foreach (var folder in Model)
+{
+    <div class="card-body">
+        <a class="btn btn-primary" asp-action="Index" asp-route-id="@folder.Id">@folder.FullPath</a>
+    </div>
+}
+</div>

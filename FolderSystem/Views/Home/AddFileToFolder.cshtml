@@ -1,0 +1,21 @@
+﻿@model AddFileToFolderVM
+@{
+    ViewData["Title"] = "Home Page";
+    var folderId = ViewData["FolderId"] as int? ?? 1;
+}
+
+<div>
+    <form enctype="multipart/form-data" method="post">
+        <div class="card">
+            <div class="card-body">
+                <input asp-for="FolderId" value="@folderId" hidden="hidden"/>
+                <input class="form-control" asp-for="File"/>
+            </div>
+            <div class="card-footer">
+                <div class="row">
+                    <button class="btn btn-success" type="submit">ADD</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>

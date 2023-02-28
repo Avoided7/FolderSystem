@@ -1,0 +1,20 @@
+﻿@model AddFolderVM
+
+@{
+    var folderId = ViewData["ID"] as int? ?? 1;
+}
+
+<form method="post">
+    <div class="card">
+        <div class="card-body">
+            <input asp-for="BaseFolderId" value="@folderId" hidden="hidden"/>
+            <div class="card-text mb-3">
+                <input class="form-control mb-3" asp-for="Name" placeholder="Folder name..."/>
+                <span class="text-danger" asp-validation-for="Name"></span>
+            </div>
+            <div class="row">
+                <button class="btn btn-success" type="submit">Create</button>
+            </div>
+        </div>
+    </div>
+</form>
