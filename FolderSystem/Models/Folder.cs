@@ -12,8 +12,8 @@ public class Folder
 
     public int Capacity { get; set; }
     // Relations
-    public IEnumerable<FileContext> Files { get; set; }
-    public IEnumerable<Folder> Folders { get; set; }
+    public IEnumerable<FileContext> Files { get; set; } = null!;
+    public IEnumerable<Folder> Folders { get; set; } = null!;
     
     public int? BaseFolderId { get; set; }
     public Folder? BaseFolder { get; set; }

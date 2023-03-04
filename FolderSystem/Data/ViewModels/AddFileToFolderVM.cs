@@ -6,6 +6,6 @@ public class AddFileToFolderVM
 {
     [Required]
     public int FolderId { get; set; }
-    [Required]
-    public IFormFile File { get; set; }
+
+    [Required] public IFormFile File { get; set; } = null!;
 }

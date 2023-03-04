@@ -55,15 +55,13 @@ public class HomeController : Controller
     [HttpPost]
     public async Task<IActionResult> Import(IFormFile file)
     {
-        if (file.ContentType != "text/plain")
+        if (file.ContentType != "application/x-zip-compressed")
         {
             ModelState.AddModelError("", "Incorrect file format.");
             return View();
         }
         
-        var addedCount = await _folderService.ImportFromFile(file);
-
-        Console.WriteLine(addedCount);
+        await _folderService.ImportFromZipFile(file);
         
         return RedirectToAction(nameof(Index));
     }
@@ -74,14 +72,14 @@ public class HomeController : Controller
 
     public async Task<IActionResult> ExportToFile(int id)
     {
-        var folderInfo = await _folderService.ExportFolder(id);
+        ExportFolderVM? folderInfo = await _folderService.ExportFolder(id);
 
         if (folderInfo == null)
         {
             return BadRequest();
         }
-        
-        return File(folderInfo.Content, "text/plain", folderInfo.Name + ".txt");
+
+        return File(folderInfo.Content, "application/zip", folderInfo.Name + ".zip");
     }
 
     #endregion

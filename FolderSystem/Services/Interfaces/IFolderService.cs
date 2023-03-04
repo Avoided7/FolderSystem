@@ -9,7 +9,7 @@ public interface IFolderService
     Task<IEnumerable<Folder>> GetAllAsync();
     Task<bool> AddAsync(AddFolderVM model);
     Task<int?> DeleteAsync(int id);
-    Task<int> ImportFromFile(IFormFile file);
+    Task ImportFromZipFile(IFormFile file);
     Task<ExportFolderVM?> ExportFolder(int id);
     Task<bool> ClearAsync(int id);
 }

@@ -1,9 +1,9 @@
-﻿using System.Text;
-using System.Text.RegularExpressions;
+﻿using System.IO.Compression;
 using FolderSystem.Data;
 using FolderSystem.Data.ViewModels;
 using FolderSystem.Models;
 using FolderSystem.Services.Interfaces;
+using ICSharpCode.SharpZipLib.Zip;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
@@ -137,60 +137,29 @@ public class FolderService : IFolderService
         return true;
     }
 
-    public async Task<int> ImportFromFile(IFormFile file)
+    public async Task ImportFromZipFile(IFormFile file)
     {
-        int addedCount = 0;
-        using (var reader = new StreamReader(file.OpenReadStream()))
+        using (ZipInputStream zip = new ZipInputStream(file.OpenReadStream()))
         {
-            var regex = new Regex(@"^\/(.+)(\/([^\/]*)|)$");
-            
-            var result = reader
-                                    .ReadToEnd()
-                                    .Replace('\r', '\0')
-                                    .Split('\n')
-                                    .Select(folder => folder
-                                                                 .Split('/')
-                                                                 .Select(part => part.Trim())
-                                                                 .Where(part => !part.IsNullOrEmpty())
-                                                                 .ToList());
-            foreach (var path in result)
+            ZipEntry zipEntry = zip.GetNextEntry();
+            while (zipEntry != null)
             {
-                if (!regex.IsMatch("/" + string.Join("/", path)) || path.Any(part => part.Contains('/')))
+                if (zipEntry.IsDirectory)
                 {
-                    continue;
+                    await AddByFullPath(zipEntry.Name.Split('/').SkipLast(1));
                 }
-                int previousFolderId = 1;
-                for (int index = 0; index < path.Count(); index++)
-                {
-                    var fullPath = "/" + string.Join("/", path.Take(index + 1));
-                    
-                    var folder = _dbContext.Folders.FirstOrDefault(folder => folder.Capacity == index + 1 &&
-                                                       folder.FullPath == fullPath);
-                    
-                    if (folder == null)
-                    {
-                        addedCount++;
-                        await AddAsync(new AddFolderVM
-                        {
-                            Name = path.ElementAt(index),
-                            BaseFolderId = previousFolderId
-                        });
-                        folder = _dbContext.Folders.First(iterFolder => iterFolder.Capacity == index + 1 &&
-                                                                        iterFolder.Name == path.ElementAt(index));
-                    }
-
-                    previousFolderId = folder.Id;
-                }
+                zipEntry = zip.GetNextEntry();
             }
         }
-        return addedCount;
-
     }
 
     public async Task<ExportFolderVM?> ExportFolder(int id)
     {
         var currentFolder = await _dbContext.Folders.SingleOrDefaultAsync(folder => folder.Id == id);
 
+        
+            
+            
         if (currentFolder == null)
         {
             return null;
@@ -205,7 +174,10 @@ public class FolderService : IFolderService
                 .AsNoTracking()
                 .SingleAsync(folder => folder.Id == folderId);
 
-            allPathes.Add(folder.FullPath);
+            if (!folder.Folders.Any())
+            {
+                allPathes.Add(folder.FullPath);
+            }
             foreach (var iterFolder in folder.Folders)
             {
                 await GetAllFolders(iterFolder.Id);
@@ -214,12 +186,53 @@ public class FolderService : IFolderService
 
         await GetAllFolders(id);
 
+        allPathes = allPathes.Select(path => path.Substring(1) + "/").ToList();
+        
+        byte[] bytes;
+        using (var fs = new MemoryStream())
+        {
+            using (var zip = new ZipArchive(fs, ZipArchiveMode.Update, true))
+            {
+                foreach (var path in allPathes)
+                {
+                    zip.CreateEntry(path);
+                }
+            }
+
+            bytes = fs.ToArray();
+        }
+        
         var exportVM = new ExportFolderVM
         {
             Name = currentFolder.Name,
-            Content = Encoding.UTF8.GetBytes(string.Join("\n", allPathes))
+            Content = bytes
         };
         
         return exportVM;
+    }
+
+    private async Task AddByFullPath(IEnumerable<string> path)
+    {
+        int previousFolderId = 1;
+        for (int index = 0; index < path.Count(); index++)
+        {
+            var fullPath = "/" + string.Join("/", path.Take(index + 1));
+                    
+            var folder = _dbContext.Folders.FirstOrDefault(folder => folder.Capacity == index + 1 &&
+                                                                     folder.FullPath == fullPath);
+                    
+            if (folder == null)
+            {
+                await AddAsync(new AddFolderVM
+                {
+                    Name = path.ElementAt(index),
+                    BaseFolderId = previousFolderId
+                });
+                folder = _dbContext.Folders.First(iterFolder => iterFolder.Capacity == index + 1 &&
+                                                                iterFolder.Name == path.ElementAt(index));
+            }
+
+            previousFolderId = folder.Id;
+        }
     }
 }
